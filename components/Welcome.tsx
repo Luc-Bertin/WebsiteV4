@@ -148,7 +148,7 @@ export default function StylishIntroductionPage() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-5xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-            Clients I've Worked With
+            Clients I have Worked With
           </h2>
           <div className="flex flex-wrap justify-center gap-8">
             {clients.map((client, index) => (
@@ -182,7 +182,7 @@ export default function StylishIntroductionPage() {
           <h2 className="text-5xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Ready to Collaborate?
           </h2>
-          <p className="text-xl mb-8 text-gray-300">Let's turn your ideas into reality. Schedule a meeting with me.</p>
+          <p className="text-xl mb-8 text-gray-300">Turn your ideas into reality: schedule a meeting with me.</p>
           <Link
             href="https://calendly.com/lucbertin/meeting"
             className="inline-block bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
