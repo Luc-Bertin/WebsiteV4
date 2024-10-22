@@ -129,13 +129,10 @@ export default function StylishIntroductionPage() {
                   >
                     <Link
                       href={link.href}
-                      className="flex items-center gap-2 text-lg px-6 py-3 rounded-full bg-gradient-to-r from-indigo-800 to-blue-900 text-white font-semibold shadow-lg transition-all duration-300 transform group-hover:scale-105"
+                      className=" glow-on-hover flex items-center gap-2 text-lg px-6 py-3 rounded-full bg-gradient-to-r from-indigo-800 to-blue-900 text-white font-semibold shadow-lg transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-teal-500"
                     >
                       <link.icon className="text-white" />
                       <span className="mr-2">{link.label}</span>
-                      <span className="inline-block w-0 group-hover:w-5 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <FaArrowRight className="ml-1" />
-                      </span>
                     </Link>
                   </motion.div>
                 ))}
