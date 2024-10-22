@@ -10,7 +10,6 @@ import {
   FaChalkboardTeacher,
 } from "react-icons/fa";
 import { SiMalt } from "react-icons/si";
-import { FaArrowRight } from "react-icons/fa";
 
 const fullText = "Hello, I'm Luc. A Backend Developer :)";
 const technologies = [
