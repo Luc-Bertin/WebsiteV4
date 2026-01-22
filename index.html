@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luc Bertin - Portfolio</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            /* Default Text Colors (will be overridden per slide) */
+            --text-main: #ffffff;
+            --text-muted: rgba(255,255,255,0.6);
+            --bg-slide: #f8f6f1;
+            
+            --font-serif: 'Instrument Serif', serif;
+            --font-sans: 'Space Grotesk', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #111;
+            font-family: var(--font-sans);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            cursor: crosshair;
+        }
+        
+        /* Clickable elements get pointer cursor */
+        a, button, .timeline-segment, .drawer-tab, [onclick] {
+            cursor: pointer;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+        h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 400; }
+        a { color: inherit; text-decoration: none; }
+
+        /* --- UI ELEMENTS (FIXED) --- */
+        
+        .top-ui {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            z-index: 100;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 2rem;
+            pointer-events: none;
+            color: var(--ui-color, white);
+            transition: color 0.5s ease;
+        }
+
+        .logo {
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            pointer-events: auto;
+        }
+
+        .slide-counter {
+            font-family: var(--font-sans);
+            font-variant-numeric: tabular-nums;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: 8px;
+            z-index: 110;
+            display: flex;
+        }
+
+        .timeline-segment {
+            flex: 1;
+            height: 100%;
+            background: var(--ui-color-dim, rgba(255,255,255,0.25));
+            margin-right: 2px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.5s ease;
+            pointer-events: auto;
+        }
+
+        .timeline-segment:hover { 
+            background: var(--ui-color-hover, rgba(255,255,255,0.5)); 
+        }
+
+        .timeline-segment.active, 
+        .timeline-segment.past {
+            background: var(--ui-color, white);
+        }
+
+        /* Tooltip */
+        .timeline-segment::after {
+            content: attr(data-label);
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.5s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            font-family: var(--font-sans);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ui-color, white);
+            font-weight: 700;
+        }
+
+        .timeline-segment:hover::after { opacity: 1; }
+
+        /* Contact Widget */
+        .contact-widget {
+            position: fixed;
+            bottom: 2rem; right: 3rem;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            color: var(--ui-color, white);
+            transition: color 0.5s ease;
+        }
+        
+        .contact-link {
+            font-size: 1.8rem;
+            transition: opacity 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .contact-link:hover { opacity: 0.6; transform: translateY(-3px); }
+
+        /* Custom Malt Icon */
+        .malt-icon {
+            font-family: var(--font-sans);
+            font-weight: 800;
+            font-size: 1.2rem;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        /* --- SLIDER MECHANISM --- */
+        .slider-viewport { width: 100vw; height: 100vh; overflow: hidden; position: relative; }
+        .slider-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- SLIDE LAYOUT --- */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            background-color: var(--bg-slide);
+            color: var(--text-main);
+            transform: translateX(0);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+            cursor: grab;
+        }
+        
+        .slide:active {
+            cursor: grabbing;
+        }
+        
+        .slide.dragging {
+            transition: none;
+        }
+        
+        .slide.past {
+            transform: translateX(calc(-100% + var(--stack-offset, 0px)));
+            z-index: var(--stack-z, 10);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+        }
+        
+        /* Drawer tab label */
+        .drawer-tab {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            opacity: 1;
+            pointer-events: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .slide.past .drawer-tab {
+            pointer-events: auto;
+        }
+        
+        .slide.past .drawer-tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .drawer-tab-company,
+        .drawer-tab-date {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-family: var(--font-sans);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-main);
+            opacity: 0.9;
+        }
+        
+        .drawer-tab-company {
+            transform: rotate(180deg);
+        }
+        
+        .drawer-tab-date {
+            transform: rotate(180deg);
+            font-weight: 400;
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+        
+        .slide.active {
+            transform: translateX(0);
+            z-index: 5;
+        }
+        
+        .slide.future {
+            transform: translateX(0);
+            z-index: 1;
+            visibility: hidden;
+        }
+        
+        .slide.next {
+            transform: translateX(0);
+            z-index: 2;
+            visibility: visible;
+        }
+
+        /* Left Column - Image */
+        .col-left {
+            flex: 0 0 30%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .col-left picture {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .col-left img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.1);
+            transition: filter 0.5s ease;
+        }
+
+        .slide.active .col-left img {
+            filter: grayscale(0%) sepia(20%) contrast(1.1);
+        }
+
+        /* Right Column - Content */
+        .col-right {
+            flex: 1;
+            height: 100%;
+            padding: 8rem 6rem 4rem 6rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            background-color: var(--bg-slide);
+        }
+
+
+        /* STICKER LOGO */
+        .sticker-logo {
+            height: 45px;
+            width: auto;
+            object-fit: contain;
+            opacity: 0.9;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+            border-radius: 4px;
+            margin-left: 1rem;
+            vertical-align: middle;
+        }
+
+        /* Typography */
+        .company-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            position: relative; z-index: 1;
+        }
+
+        .company-name {
+            font-size: 4.5rem;
+            line-height: 1;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .badge-current {
+            background: var(--text-main);
+            color: var(--bg-slide);
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+
+        .role-title {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-weight: 300;
+            position: relative; z-index: 1;
+        }
+
+        .meta-data {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 3rem;
+            display: flex;
+            gap: 2rem;
+            color: var(--text-main);
+            opacity: 0.8;
+            border-bottom: 1px solid var(--text-muted);
+            padding-bottom: 1rem;
+            width: 100%;
+            font-weight: 500;
+            position: relative; z-index: 1;
+        }
+
+        .content-block { margin-bottom: 2rem; position: relative; z-index: 1; }
+
+        .context-text {
+            font-size: 1.15rem;
+            margin-bottom: 2rem;
+            max-width: 650px;
+            line-height: 1.6;
+        }
+        
+        .context-text p { margin-bottom: 1rem; }
+
+        .work-list {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .work-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            opacity: 0.9;
+        }
+
+        .work-list li::before {
+            content: "→";
+            position: absolute;
+            left: 0; color: var(--text-muted);
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        /* Action Button */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 12px 24px;
+            margin-bottom: 1.5rem;
+            background: var(--text-main);
+            color: var(--bg-slide);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        
+        .action-btn i {
+            font-size: 1.1rem;
+        }
+
+        .tech-tag {
+            border: 1px solid var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            opacity: 0.8;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .tech-tag:hover {
+            opacity: 1;
+            background: var(--text-main);
+            color: var(--bg-slide);
+            border-color: var(--text-main);
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            body {
+                overflow-y: auto;
+                overflow-x: hidden;
+                cursor: auto;
+            }
+            
+            .top-ui { 
+                padding: 0.8rem 1.2rem;
+                position: fixed;
+                top: 1rem;
+                left: 1rem;
+                right: auto;
+                width: auto;
+                background: rgba(128, 128, 128, 0.2);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-radius: 20px;
+                border: 1px solid rgba(128, 128, 128, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                box-sizing: border-box;
+                z-index: 200;
+            }
+            
+            .logo { 
+                font-size: 1rem; 
+                color: var(--ui-color, #fff) !important;
+                text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            }
+            .slide-counter { display: none; }
+            
+            .slider-viewport {
+                overflow-y: auto;
+                overflow-x: hidden;
+                height: auto;
+            }
+            
+            .slider-track {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .slide {
+                position: relative;
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                flex-direction: column;
+                visibility: visible !important;
+                transform-origin: center top;
+                will-change: transform, opacity;
+            }
+            
+            .slide.past,
+            .slide.active,
+            .slide.future,
+            .slide.next {
+                z-index: auto;
+                transform-origin: center top;
+                transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+            }
+            
+            .col-left { 
+                flex: 0 0 auto;
+                width: 100%;
+                height: 180px;
+                border-right: none;
+                border-bottom: 1px solid rgba(128,128,128,0.2);
+            }
+            
+            .col-left img {
+                object-fit: cover;
+                object-position: center;
+            }
+            
+            .col-right {
+                flex: 1;
+                width: 100%;
+                padding: 1.5rem 1.5rem 3rem 1.5rem;
+                overflow-y: visible;
+                height: auto;
+            }
+            
+            .company-header {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .company-name { 
+                font-size: 1.8rem; 
+                width: 100%;
+            }
+            
+            .sticker-logo { 
+                height: 35px;
+                margin-left: 0;
+                margin-right: 0.5rem;
+            }
+            
+            .role-title {
+                font-size: 1rem;
+            }
+            
+            .meta-data { 
+                flex-direction: column; 
+                gap: 0.5rem; 
+            }
+            
+            .content-block {
+                margin-top: 1.5rem;
+            }
+            
+            .work-list li {
+                font-size: 0.9rem;
+            }
+            
+            .tech-stack {
+                gap: 0.4rem;
+            }
+            
+            .tech-tag {
+                font-size: 0.7rem;
+                padding: 4px 10px;
+            }
+            
+            .drawer-tab {
+                display: none;
+            }
+            
+            .contact-widget { 
+                position: fixed;
+                right: 1rem; 
+                bottom: 1rem;
+                flex-direction: row;
+                gap: 1rem;
+                background: rgba(128, 128, 128, 0.2);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                padding: 0.75rem 1.2rem;
+                border-radius: 25px;
+                border: 1px solid rgba(128, 128, 128, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
+            
+            .contact-link {
+                color: var(--ui-color, #fff) !important;
+                text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            }
+            
+            .contact-link {
+                font-size: 1.4rem;
+            }
+            
+            .action-btn {
+                width: auto !important;
+                max-width: 100%;
+            }
+            
+            /* Intro slide adjustments - hide empty image area */
+            .slide:first-child .col-left {
+                display: none;
+            }
+            .slide:first-child .col-right {
+                padding-top: 5rem;
+            }
+            
+            /* Payplug slide - no mobile image */
+            .slide:nth-child(2) .col-left {
+                display: none;
+            }
+            .slide:nth-child(2) .col-right {
+                padding-top: 5rem;
+            }
+            .slide:first-child .col-right h1 {
+                font-size: 2rem !important;
+            }
+            
+            .slide:first-child .col-right p {
+                font-size: 1rem !important;
+            }
+            
+            /* Contact slide adjustments - hide empty image area */
+            .slide:last-child .col-left {
+                display: none;
+            }
+            .slide:last-child .col-right {
+                padding-top: 5rem;
+            }
+            .slide:last-child .col-right h1 {
+                font-size: 2rem !important;
+            }
+            
+            .timeline-container {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="timeline-container" id="timeline"></div>
+
+    <div class="top-ui">
+        <div class="logo">Luc Bertin</div>
+        <div class="slide-counter" id="counter">01 / 08</div>
+    </div>
+
+    <div class="contact-widget">
+        <a href="https://github.com/Luc-Bertin" target="_blank" class="contact-link" title="GitHub">
+            <i class="ph ph-github-logo"></i>
+        </a>
+        <a href="resume_Luc.pdf" target="_blank" class="contact-link" title="Resume">
+            <i class="ph ph-file-pdf"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/luc-bertin-291904ab/" target="_blank" class="contact-link" title="LinkedIn">
+            <i class="ph ph-linkedin-logo"></i>
+        </a>
+        <a href="https://www.malt.fr/profile/lucbertin" target="_blank" class="contact-link" title="Malt">
+            <span class="malt-icon">M</span>
+        </a>
+        <a href="mailto:dev@lucbertin.com" class="contact-link" title="Email">
+            <i class="ph ph-envelope-simple"></i>
+        </a>
+    </div>
+
+    <div class="slider-viewport">
+        <div class="slider-track" id="track">
+            
+            <!-- Intro Slide -->
+            <section class="slide active" style="--bg-slide: #DDE8B9; --text-main: #1a1a2e; --text-muted: rgba(26,26,46,0.6);">
+                <div class="col-left" style="flex: 0 0 10%;">
+                    <!-- Reduced spacing -->
+                </div>
+                <div class="col-right" style="justify-content: center; flex: 1;">
+                    <h1 style="font-size: 3.5rem; font-weight: 300; line-height: 1.2; margin: 0 0 2rem 0;">
+                        Hello, I'm <strong style="font-weight: 700;">Luc</strong><br>
+                        a Software Engineer
+                    </h1>
+                    <p style="font-size: 1.1rem; line-height: 1.8; max-width: 600px; opacity: 0.85;">
+                        I'm a backend-focused software engineer and independent contractor with a background in data science and AI education. I design and build reliable, well-architected systems, mostly in Python, covering APIs, authentication, permissions, and automation-heavy workflows. I care deeply about clean architecture, security, and long-term maintainability. Originally from France, I've worked remotely from Spain and Poland and collaborate with teams across Europe.
+                    </p>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Hello</span>
+                    <span class="drawer-tab-date"></span>
+                </div>
+            </section>
+
+            <section class="slide" style="--bg-slide: #bbc2e2; --text-main: #1a1a2e; --text-muted: rgba(26,26,46,0.6);">
+                <div class="col-left">
+                    <img src="assets/images/payplug_desktop.png" alt="OAuth2 Kratos Hydra Flow" style="object-fit: cover; object-position: center;">
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Payplug</h2>
+                        <span class="badge-current">Current</span>
+                        <img src="logos/payplug.jpg" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Senior Backend Engineer</div>
+                    
+                    <div class="meta-data">
+                        <span><i class="ph ph-calendar-blank"></i> June 2024 — Present</span>
+                        <span><i class="ph ph-buildings"></i> BPCE Banking Group</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p>After acquisition of Payplug and Dalenys by BPCE. My work was to bridge gaps between their stacks, unify authentication & permissions system, add OAuth2 integration for users and plugin (Prestashop, Shopify), and migrate users from the legacy monoliths to microservices.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li><strong>Unified Authentication:</strong> Integrated <strong>Ory Stack</strong> (Kratos for identity/MFA, Hydra for OAuth2 flows/auto-registration, Keto for granular RBAC/ABAC permissions).</li>
+                            <li><strong>OAuth2 Portal:</strong> Built a self-service portal for internal integrations and CMS plugins (PrestaShop, Shopify) with automated client registration.</li>
+                            <li><strong>Migration Strategy:</strong> Gradual account migration schema from monolith.</li>
+                            <li><strong>Observability:</strong> Full telemetry using Datadog & OpenTelemetry (traces, spans, correlated logs).</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Python</span><span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">Ory Kratos</span><span class="tech-tag">Ory Hydra</span>
+                            <span class="tech-tag">Ory Keto</span><span class="tech-tag">OAuth2</span>
+                            <span class="tech-tag">MongoDB</span><span class="tech-tag">Docker</span>
+                            <span class="tech-tag">Microservices</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Payplug</span>
+                    <span class="drawer-tab-date">2024—26</span>
+                </div>
+            </section>
+
+            <section class="slide" style="--bg-slide: #e0f2f1; --text-main: #1a1a2e; --text-muted: rgba(26,26,46,0.6);">
+                <div class="col-left">
+                    <picture>
+                        <source media="(max-width: 900px)" srcset="assets/images/backmarket_mobile.png">
+                        <img src="assets/images/backmarket_desktop.jpg" alt="Airflow DAG Details" style="object-fit: cover; object-position: center;">
+                    </picture>
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Back Market</h2>
+                        <img src="logos/Back_Market.png" alt="" class="sticker-logo" style="height: 60px;" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Data / Backend Engineer</div>
+                    
+                    <div class="meta-data">
+                        <span>Sept 2023 — April 2024</span>
+                        <span>Finance Team</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p><strong>Context:</strong> Engineered high-stakes compliance pipelines for the Finance Team to meet the European <strong>DAC7 directive</strong>, requiring strict reporting of marketplace transactions in a deterministic format.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li><strong>Airflow Pipelines:</strong> Designed complex DAGs to transform ledger transaction data into the DAC7 regulatory format.</li>
+                            <li><strong>Data Engineering:</strong> Implemented logic for mapping, normalization, validation, and enrichment of massive financial datasets.</li>
+                            <li><strong>Infrastructure:</strong> Optimized execution on <strong>Google Cloud Composer</strong>, managing volume and monitoring pipeline stability.</li>
+                            <li><strong>Compliance:</strong> Collaborated with Finance/Legal teams for final data validation.</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Python</span><span class="tech-tag">Airflow</span>
+                            <span class="tech-tag">GCP Composer</span><span class="tech-tag">BigQuery</span>
+                            <span class="tech-tag">Google Cloud Storage</span><span class="tech-tag">Terraform</span>
+                            <span class="tech-tag">ETL</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Back Market</span>
+                    <span class="drawer-tab-date">2023—24</span>
+                </div>
+            </section>
+
+            <section class="slide" style="--bg-slide: #b7b5e4; --text-main: #1a1a2e; --text-muted: rgba(26,26,46,0.6);">
+                <div class="col-left">
+                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1470&auto=format&fit=crop" alt="Shadow">
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Shadow</h2>
+                        <img src="logos/shadow.png" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Backend Engineer</div>
+                    
+                    <div class="meta-data">
+                        <span>June 2022 — July 2023</span>
+                        <span>Core Business Platform</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p><strong>Context:</strong> Transitioned the cloud gaming platform from B2C to <strong>B2B SaaS</strong> following the acquisition by Octave Klaba. I worked on the core subscription lifecycle to support multi-VM rentals and enterprise fleets.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li><strong>B2B Features:</strong> Extended architecture to support Organizations, multi-machine fleets, and granular roles/permissions.</li>
+                            <li><strong>Event-Driven:</strong> Orchestrated the "Subscription → VM Activation → Billing" flow using async events to ensure consistency.</li>
+                            <li><strong>Lifecycle Management:</strong> Handled activation, suspension, termination, and payment retries.</li>
+                            <li><strong>Tooling:</strong> Developed a <strong>Vue.js dashboard</strong> to visualize and retry asynchronous Redis Queue (RQ) jobs.</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Python</span><span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">Django</span><span class="tech-tag">Redis Queue</span>
+                            <span class="tech-tag">Event-Driven</span><span class="tech-tag">Vue.js</span>
+                            <span class="tech-tag">SaaS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Shadow</span>
+                    <span class="drawer-tab-date">2022—23</span>
+                </div>
+            </section>
+
+            <section class="slide" style="--bg-slide: #0d47a1; --text-main: #ffffff; --text-muted: rgba(255,255,255,0.6);">
+                <div class="col-left">
+                    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1472&auto=format&fit=crop" alt="Carrier">
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Carrier</h2>
+                        <img src="logos/carrier.svg" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Lead Backend Engineer</div>
+                    
+                    <div class="meta-data">
+                        <span>July 2021 — July 2023</span>
+                        <span>USA (Remote)</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p><strong>Context:</strong> Modernized thermodynamics simulation tools (previously desktop/VM based) into a <strong>real-time collaborative web platform</strong> (similar to Miro) where users can connect Modelica components via drag-and-drop.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li><strong>High Performance:</strong> Built an ASGI FastAPI backend with WebSockets and Redis to sync user actions (cursors, movements) at 20 FPS with a non-blocking event loop.</li>
+                            <li><strong>Graph Database:</strong> Solved massive file duplication (Modelica libs are 2-4GB) by parsing libraries into a <strong>Neo4j</strong> semantic graph, enabling versioning and optimized traversal.</li>
+                            <li><strong>Leadership:</strong> Lead a team of 5 developers, managing code reviews and cross-timezone organization.</li>
+                            <li><strong>Cloud:</strong> Deployed via AWS Elastic Beanstalk (Docker) and AWS Lambda for parallel ingestion.</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Python</span><span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">Socket.IO</span><span class="tech-tag">Neo4j</span>
+                            <span class="tech-tag">Redis</span><span class="tech-tag">Docker</span>
+                            <span class="tech-tag">AWS Lambda</span><span class="tech-tag">AWS Beanstalk</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Carrier</span>
+                    <span class="drawer-tab-date">2021—23</span>
+                </div>
+            </section>
+
+            <section class="slide" style="--bg-slide: #db324d; --text-main: #ffffff; --text-muted: rgba(255,255,255,0.6);">
+                <div class="col-left">
+                    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1470&auto=format&fit=crop" alt="Other">
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Other</h2>
+                        <img src="logos/exomind.png" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Various Projects</div>
+                    
+                    <div class="meta-data">
+                        <span>2018 — 2021</span>
+                        <span>Startups & Tech Clients</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p>A history of delivering tailored Python solutions for startups, focusing on backend systems, automation, and compliance tools.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li><strong>Exomind:</strong> Developed a compliance engine (XCCDF) with custom parsers/runners to validate workstation configurations.</li>
+                            <li><strong>Memorandum:</strong> Lead backend support for a kids' entertainment startup. Built a user monitoring dashboard, containerized microservices, and handled CI/CD.</li>
+                            <li><strong>Automation:</strong> Built web scrapers (Selenium) for sports data, automated invoice apps (Qt), and marketing data extraction tools.</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Django</span><span class="tech-tag">Flask</span>
+                            <span class="tech-tag">Vue.js</span><span class="tech-tag">Docker</span>
+                            <span class="tech-tag">CI/CD</span><span class="tech-tag">Selenium</span>
+                            <span class="tech-tag">BeautifulSoup</span><span class="tech-tag">Qt</span>
+                            <span class="tech-tag">Google PubSub</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Other</span>
+                    <span class="drawer-tab-date">2018—21</span>
+                </div>
+            </section>
+
+             <section class="slide" style="--bg-slide: #f0f4c3; --text-main: #2e3e21; --text-muted: #6b755d;">
+                <div class="col-left">
+                    <picture>
+                        <source media="(max-width: 900px)" srcset="assets/images/teaching_mobile.png">
+                        <img src="assets/images/teaching_desktop.png" alt="Teaching Blog">
+                    </picture>
+                </div>
+                <div class="col-right">
+                    <div class="company-header">
+                        <h2 class="company-name">Teaching</h2>
+                        <img src="logos/esilv.png" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                        <img src="logos/iim.png" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                        <img src="logos/ipsi.png" alt="" class="sticker-logo" onerror="this.style.display='none'">
+                    </div>
+                    <div class="role-title">Affiliate Teacher</div>
+                    
+                    <div class="meta-data">
+                        <span>2019 — 2021</span>
+                        <span>ESILV / IIM (MSc)</span>
+                    </div>
+
+                    <div class="content-block">
+                        <div class="context-text">
+                            <p>Instructor for MSc students pursuing engineering degrees in Data Science and Computer Science.</p>
+                        </div>
+                        <ul class="work-list">
+                            <li>Taught Machine Learning (XGBoost, SVC), Deep Learning (Keras, CNN/RNN), and Web Scraping.</li>
+                            <li>Mentored students through practical Python/R projects and introductions to Docker/Kubernetes.</li>
+                        </ul>
+                        <a href="https://blog.lucbertin.com" target="_blank" class="action-btn">
+                            My Teaching Website <i class="ph ph-arrow-right"></i>
+                        </a>
+                        <div class="tech-stack">
+                            <span class="tech-tag">Python</span><span class="tech-tag">Machine Learning</span>
+                            <span class="tech-tag">Deep Learning</span><span class="tech-tag">Keras</span>
+                            <span class="tech-tag">Scikit-Learn</span><span class="tech-tag">Teaching</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Teaching</span>
+                    <span class="drawer-tab-date">2019—21</span>
+                </div>
+            </section>
+
+            <!-- Contact Slide -->
+            <section class="slide" style="--bg-slide: #000000; --text-main: #ffffff; --text-muted: rgba(255,255,255,0.6);">
+                <div class="col-left">
+                    <!-- Empty for spacing -->
+                </div>
+                <div class="col-right" style="justify-content: center;">
+                    <h1 style="font-size: 3rem; font-weight: 300; line-height: 1.2; margin: 0 0 2rem 0;">
+                        Ready to <strong style="font-weight: 700;">contact me</strong>?
+                    </h1>
+                    <p style="font-size: 1.1rem; line-height: 1.8; max-width: 500px; opacity: 0.7; margin-bottom: 2.5rem;">
+                        Let's discuss your project. Book a time slot that works for you.
+                    </p>
+                    <a href="https://calendly.com/lucbertin/meeting" target="_blank" class="action-btn" style="background: #fff; color: #000; width: 500px; justify-content: center;">
+                        Book a meeting <i class="ph ph-calendar-check"></i>
+                    </a>
+                </div>
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Contact</span>
+                    <span class="drawer-tab-date"></span>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        const track = document.getElementById('track');
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('counter');
+        const timelineContainer = document.getElementById('timeline');
+        
+        const totalSlides = slides.length;
+        let currentSlide = 0;
+        let isAnimating = false;
+        
+        // Mobile detection
+        const isMobile = () => window.innerWidth <= 900;
+        
+        // Initialize slide positions
+        const stackSliver = 50; // Pixels visible per stacked slide
+        
+        function updateSlideClasses() {
+            if (isMobile()) return; // Skip on mobile - CSS handles layout
+            
+            slides.forEach((slide, i) => {
+                slide.classList.remove('past', 'active', 'future', 'next');
+                slide.style.removeProperty('--stack-offset');
+                slide.style.removeProperty('--stack-z');
+                
+                if (i < currentSlide) {
+                    slide.classList.add('past');
+                    // Stack offset: each slide stacks further right
+                    // Z-index: older slides on top so their sliver is visible
+                    const offset = (i + 1) * stackSliver;
+                    slide.style.setProperty('--stack-offset', `${offset}px`);
+                    slide.style.setProperty('--stack-z', 100 - i);
+                } else if (i === currentSlide) {
+                    slide.classList.add('active');
+                } else if (i === currentSlide + 1) {
+                    slide.classList.add('next');
+                } else {
+                    slide.classList.add('future');
+                }
+            });
+        }
+        if (!isMobile()) updateSlideClasses();
+
+        // --- TIMELINE SETUP ---
+        const companies = [
+            "Hello", "Payplug", "Back Market", "Shadow", "Carrier", 
+            "Other", "Teaching", "Contact"
+        ];
+
+        companies.forEach((name, index) => {
+            const segment = document.createElement('div');
+            segment.classList.add('timeline-segment');
+            segment.setAttribute('data-label', name);
+            if (index === 0) segment.classList.add('active');
+            
+            segment.addEventListener('click', () => {
+                goToSlide(index);
+            });
+            
+            timelineContainer.appendChild(segment);
+        });
+
+        const segments = document.querySelectorAll('.timeline-segment');
+
+        // --- NAVIGATION LOGIC ---
+        
+        function updateTimeline() {
+            segments.forEach((seg, index) => {
+                seg.classList.remove('active', 'past');
+                if (index < currentSlide) {
+                    seg.classList.add('past');
+                } else if (index === currentSlide) {
+                    seg.classList.add('active');
+                }
+            });
+        }
+
+        function updateCounter() {
+            const currentFormatted = (currentSlide + 1).toString().padStart(2, '0');
+            const totalFormatted = totalSlides.toString().padStart(2, '0');
+            counter.innerText = `${currentFormatted} / ${totalFormatted}`;
+        }
+
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+            
+            const changed = index !== currentSlide;
+            isAnimating = true;
+            currentSlide = index;
+
+            // Update slide classes for stacked reveal effect
+            slides.forEach(slide => {
+                slide.classList.remove('dragging');
+                slide.style.transform = '';
+            });
+            updateSlideClasses();
+
+            // Update UI only if slide changed
+            if (changed) {
+                updateTimeline();
+                updateCounter();
+                updateUIColor();
+            }
+
+            // Reset animation lock
+            setTimeout(() => {
+                isAnimating = false;
+            }, 400); 
+        }
+
+        // --- SCROLL HIJACKING (Drag-style) ---
+        let dragOffset = 0;
+        let isDragging = false;
+        let scrollTimeout = null;
+        const dragMultiplier = 1; // 1:1 scroll to movement
+        const snapThreshold = 0.15; // 15% of viewport to trigger snap
+        
+        function setDragging(dragging) {
+            isDragging = dragging;
+            slides.forEach(s => {
+                if (dragging) {
+                    s.classList.add('dragging');
+                } else {
+                    s.classList.remove('dragging');
+                }
+            });
+        }
+        
+        function applyDragOffset() {
+            const activeSlide = slides[currentSlide];
+            const nextSlide = slides[currentSlide + 1];
+            const prevSlide = slides[currentSlide - 1];
+            
+            // Calculate target stack position (where slide will rest when past)
+            const targetStackOffset = (currentSlide + 1) * stackSliver;
+            const maxDragForCommit = window.innerWidth - targetStackOffset;
+            
+            // Moving forward (scrolling down) - current slide moves left
+            if (dragOffset > 0 && nextSlide) {
+                // Clamp drag to stop at stack position
+                const clampedDrag = Math.min(dragOffset, maxDragForCommit);
+                activeSlide.style.transform = `translateX(${-clampedDrag}px)`;
+            }
+            // Moving backward (scrolling up) - previous slide moves in from left
+            else if (dragOffset < 0 && prevSlide) {
+                const prevStackOffset = currentSlide * stackSliver;
+                const offsetPx = Math.max(dragOffset, -(window.innerWidth - prevStackOffset));
+                prevSlide.style.transform = `translateX(calc(-100% + ${prevStackOffset}px + ${-offsetPx}px))`;
+            }
+        }
+        
+        function snapToSlide() {
+            setDragging(false);
+            const threshold = window.innerWidth * snapThreshold;
+            
+            // Reset inline styles
+            slides.forEach(s => s.style.transform = '');
+            
+            if (dragOffset > threshold && currentSlide < totalSlides - 1) {
+                goToSlide(currentSlide + 1);
+            } else if (dragOffset < -threshold && currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+            } else {
+                // Snap back - just let CSS transition handle it
+                goToSlide(currentSlide);
+            }
+            
+            dragOffset = 0;
+        }
+        
+        window.addEventListener('wheel', (e) => {
+            if (isMobile()) return; // Let normal scroll happen on mobile
+            if (isAnimating && !isDragging) return;
+            
+            // Start dragging
+            if (!isDragging) {
+                setDragging(true);
+            }
+            
+            // Accumulate scroll
+            dragOffset += e.deltaY * dragMultiplier;
+            
+            // Clamp drag offset to reasonable bounds
+            const maxDrag = window.innerWidth * 1.1;
+            dragOffset = Math.max(-maxDrag, Math.min(maxDrag, dragOffset));
+            
+            // Prevent dragging past first/last slide
+            if (currentSlide === 0 && dragOffset < 0) dragOffset = 0;
+            if (currentSlide === totalSlides - 1 && dragOffset > 0) dragOffset = 0;
+            
+            applyDragOffset();
+            
+            // Check if we've scrolled to stack position - commit seamlessly
+            const targetStackOffset = (currentSlide + 1) * stackSliver;
+            const commitThreshold = window.innerWidth - targetStackOffset;
+            
+            if (dragOffset >= commitThreshold && currentSlide < totalSlides - 1) {
+                currentSlide++;
+                dragOffset = 0;
+                slides.forEach(s => s.style.transform = '');
+                updateSlideClasses();
+                updateTimeline();
+                updateCounter();
+                updateUIColor();
+            } else if (currentSlide > 0) {
+                const prevStackOffset = currentSlide * stackSliver;
+                const backThreshold = -(window.innerWidth - prevStackOffset);
+                if (dragOffset <= backThreshold) {
+                    currentSlide--;
+                    dragOffset = 0;
+                    slides.forEach(s => s.style.transform = '');
+                    updateSlideClasses();
+                    updateTimeline();
+                    updateCounter();
+                    updateUIColor();
+                }
+            }
+            
+        }, { passive: true });
+
+        // --- KEYBOARD NAV ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                if(currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                if(currentSlide > 0) goToSlide(currentSlide - 1);
+            }
+        });
+
+        // --- DRAWER TAB CLICK ---
+        document.querySelectorAll('.drawer-tab').forEach((tab, index) => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Reset any drag state
+                dragOffset = 0;
+                setDragging(false);
+                slides.forEach(s => s.style.transform = '');
+                // Navigate to clicked slide
+                goToSlide(index);
+            });
+        });
+
+        // --- TOUCH SWIPE (Drag-style) - Desktop only ---
+        let touchStartX = 0;
+        let touchDragOffset = 0;
+
+        window.addEventListener('touchstart', (e) => {
+            if (isMobile()) return; // Normal scroll on mobile
+            touchStartX = e.changedTouches[0].screenX;
+            touchDragOffset = 0;
+            setDragging(true);
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isMobile()) return; // Normal scroll on mobile
+            const touchX = e.changedTouches[0].screenX;
+            touchDragOffset = touchStartX - touchX;
+            
+            // Prevent dragging past first/last slide
+            if (currentSlide === 0 && touchDragOffset < 0) touchDragOffset = 0;
+            if (currentSlide === totalSlides - 1 && touchDragOffset > 0) touchDragOffset = 0;
+            
+            dragOffset = touchDragOffset;
+            applyDragOffset();
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (isMobile()) return; // Normal scroll on mobile
+            dragOffset = touchDragOffset;
+            snapToSlide();
+        });
+
+        // --- MOUSE DRAG ---
+        let isMouseDragging = false;
+        let mouseStartX = 0;
+        let mouseDragOffset = 0;
+
+        window.addEventListener('mousedown', (e) => {
+            if (isMobile()) return;
+            // Ignore clicks on interactive elements
+            if (e.target.closest('a, button, .contact-link, .drawer-tab')) return;
+            
+            isMouseDragging = true;
+            mouseStartX = e.clientX;
+            mouseDragOffset = 0;
+            setDragging(true);
+            document.body.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDragging || isMobile()) return;
+            
+            mouseDragOffset = mouseStartX - e.clientX;
+            
+            // Prevent dragging past first/last slide
+            if (currentSlide === 0 && mouseDragOffset < 0) mouseDragOffset = 0;
+            if (currentSlide === totalSlides - 1 && mouseDragOffset > 0) mouseDragOffset = 0;
+            
+            dragOffset = mouseDragOffset;
+            applyDragOffset();
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!isMouseDragging || isMobile()) return;
+            
+            isMouseDragging = false;
+            document.body.style.cursor = '';
+            dragOffset = mouseDragOffset;
+            snapToSlide();
+        });
+
+        // Cancel drag if mouse leaves window
+        window.addEventListener('mouseleave', (e) => {
+            if (isMouseDragging) {
+                isMouseDragging = false;
+                document.body.style.cursor = '';
+                dragOffset = mouseDragOffset;
+                snapToSlide();
+            }
+        });
+
+        // --- UI COLOR BASED ON SLIDE BACKGROUND ---
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function getLuminance(r, g, b) {
+            // Relative luminance formula
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        }
+
+        function updateUIColor() {
+            const activeSlide = slides[currentSlide];
+            const bgColor = getComputedStyle(activeSlide).getPropertyValue('--bg-slide').trim();
+            const rgb = hexToRgb(bgColor);
+            
+            if (rgb) {
+                const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+                const isDark = luminance < 0.5;
+                
+                // Set UI color to opposite of background
+                const uiColor = isDark ? '#ffffff' : '#1a1a1a';
+                const uiColorDim = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+                const uiColorHover = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
+                
+                document.documentElement.style.setProperty('--ui-color', uiColor);
+                document.documentElement.style.setProperty('--ui-color-dim', uiColorDim);
+                document.documentElement.style.setProperty('--ui-color-hover', uiColorHover);
+            }
+        }
+
+        // Initialize UI color on load
+        updateUIColor();
+        
+        // Mobile: Scroll-driven animations (Apple-style)
+        if (isMobile()) {
+            // Create thresholds for smooth tracking
+            const thresholds = [];
+            for (let i = 0; i <= 1; i += 0.02) {
+                thresholds.push(i);
+            }
+            
+            const animationObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const slide = entry.target;
+                    const ratio = entry.intersectionRatio;
+                    
+                    // Calculate how far the slide has scrolled out (from top)
+                    const rect = slide.getBoundingClientRect();
+                    const isScrollingOut = rect.top < 0;
+                    
+                    if (isScrollingOut && ratio < 1) {
+                        // Slide is being scrolled away - apply scale and opacity
+                        const progress = 1 - ratio; // 0 = fully visible, 1 = fully gone
+                        const scale = 1 - (progress * 0.15); // Scale down to 0.85
+                        const opacity = 1 - (progress * 0.6); // Fade to 0.4
+                        const translateY = -progress * 30; // Slight upward movement
+                        
+                        slide.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+                        slide.style.opacity = opacity;
+                    } else if (ratio >= 0.9) {
+                        // Slide is mostly visible - reset
+                        slide.style.transform = '';
+                        slide.style.opacity = '';
+                    }
+                    
+                    // Update UI color when slide is centered
+                    if (ratio > 0.5) {
+                        const slideIndex = Array.from(slides).indexOf(slide);
+                        if (slideIndex !== -1 && slideIndex !== currentSlide) {
+                            currentSlide = slideIndex;
+                            updateUIColor();
+                        }
+                    }
+                });
+            }, { threshold: thresholds });
+            
+            slides.forEach(slide => animationObserver.observe(slide));
+        }
+
+    </script>
+</body>
+</html>

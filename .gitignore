@@ -1,36 +1,28 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# macOS
 .DS_Store
-*.pem
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Node (not used anymore, but just in case)
+node_modules/
+.next/
+*.log
 
-# local env files
-.env*.local
+# Development files
+color_palette.html
 
-# vercel
-.vercel
+# Screenshots
+Capture d'écran*.png
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Unused logos - duplicates/alternatives
+logos/Back_Market.svg
+logos/backmarket_logo.png
+logos/backmarket.webp
+logos/dag_run_details1.png
+logos/dag_run_graph1.png
+logos/dag_task_instance_logs.png
+logos/esilv.jpg
+logos/exomind.jpg
+logos/flash_design_logo.svg
+logos/iim.jpg
+logos/logo_exomind-1.png
+logos/payplug2.webp
+logos/shadow.jpg
