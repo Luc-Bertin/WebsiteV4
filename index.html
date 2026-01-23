@@ -459,6 +459,66 @@
             border-color: var(--text-main);
         }
 
+        /* --- SWIPE INDICATOR --- */
+        .swipe-indicator {
+            position: absolute;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--text-main);
+            opacity: 0.6;
+            animation: fadeInUp 1s ease 1.5s both;
+        }
+        
+        .swipe-indicator-text {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 500;
+        }
+        
+        .swipe-indicator-icon {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: swipeHint 2s ease-in-out infinite;
+        }
+        
+        .swipe-indicator-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .swipe-indicator-line {
+            width: 40px;
+            height: 2px;
+            background: var(--text-main);
+            opacity: 0.4;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 0.6;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        @keyframes swipeHint {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(10px);
+            }
+        }
+
         /* --- RESPONSIVE --- */
         @media (max-width: 900px) {
             body {
@@ -590,6 +650,10 @@
                 display: none;
             }
             
+            .swipe-indicator {
+                display: none;
+            }
+            
             .contact-widget { 
                 position: fixed;
                 right: 1rem; 
@@ -706,6 +770,15 @@
                 <div class="drawer-tab">
                     <span class="drawer-tab-company">Hello</span>
                     <span class="drawer-tab-date"></span>
+                </div>
+                
+                <!-- Swipe indicator -->
+                <div class="swipe-indicator">
+                    <span class="swipe-indicator-text">Swipe to explore</span>
+                    <div class="swipe-indicator-icon">
+                        <span class="swipe-indicator-line"></span>
+                        <i class="ph ph-arrow-right"></i>
+                    </div>
                 </div>
             </section>
 
