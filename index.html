@@ -461,17 +461,24 @@
 
         /* --- SWIPE INDICATOR --- */
         .swipe-indicator {
-            position: absolute;
-            bottom: 3rem;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 0.8rem;
             color: var(--text-main);
             opacity: 0.6;
-            animation: fadeInUp 1s ease 1.5s both;
+            animation: fadeIn 1s ease 0.5s both;
+        }
+        
+        .swipe-indicator-desktop {
+            position: absolute;
+            top: 50%;
+            right: 12%;
+            transform: translateY(-50%);
+        }
+        
+        .swipe-indicator-mobile {
+            display: none;
         }
         
         .swipe-indicator-text {
@@ -499,14 +506,12 @@
             opacity: 0.4;
         }
         
-        @keyframes fadeInUp {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px);
             }
             to {
                 opacity: 0.6;
-                transform: translateX(-50%) translateY(0);
             }
         }
         
@@ -650,8 +655,31 @@
                 display: none;
             }
             
-            .swipe-indicator {
+            .swipe-indicator-desktop {
                 display: none;
+            }
+            
+            .swipe-indicator-mobile {
+                display: flex;
+                margin-top: 2rem;
+            }
+            
+            .swipe-indicator-mobile .swipe-indicator-icon {
+                animation: scrollHint 2s ease-in-out infinite;
+            }
+            
+            .swipe-indicator-mobile .swipe-indicator-line {
+                width: 2px;
+                height: 30px;
+            }
+            
+            @keyframes scrollHint {
+                0%, 100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(8px);
+                }
             }
             
             .contact-widget { 
@@ -766,19 +794,29 @@
                     <p style="font-size: 1.1rem; line-height: 1.8; max-width: 600px; opacity: 0.85;">
                         I'm a backend-focused software engineer and independent contractor with a background in data science and AI education. I design and build reliable, well-architected systems, mostly in Python, covering APIs, authentication, permissions, and automation-heavy workflows. I care deeply about clean architecture, security, and long-term maintainability. Originally from France, I've worked remotely from Spain and Poland and collaborate with teams across Europe.
                     </p>
-                </div>
-                <div class="drawer-tab">
-                    <span class="drawer-tab-company">Hello</span>
-                    <span class="drawer-tab-date"></span>
+                    
+                    <!-- Scroll/Swipe indicator (inside content for mobile) -->
+                    <div class="swipe-indicator swipe-indicator-mobile">
+                        <span class="swipe-indicator-text">Scroll to explore</span>
+                        <div class="swipe-indicator-icon">
+                            <span class="swipe-indicator-line"></span>
+                            <i class="ph ph-arrow-down"></i>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Swipe indicator -->
-                <div class="swipe-indicator">
+                <!-- Swipe indicator (desktop - absolute positioned) -->
+                <div class="swipe-indicator swipe-indicator-desktop">
                     <span class="swipe-indicator-text">Swipe to explore</span>
                     <div class="swipe-indicator-icon">
                         <span class="swipe-indicator-line"></span>
                         <i class="ph ph-arrow-right"></i>
                     </div>
+                </div>
+                
+                <div class="drawer-tab">
+                    <span class="drawer-tab-company">Hello</span>
+                    <span class="drawer-tab-date"></span>
                 </div>
             </section>
 
