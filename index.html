@@ -1155,6 +1155,12 @@
         
         window.addEventListener('wheel', (e) => {
             if (isMobile()) return; // Let normal scroll happen on mobile
+            
+            // Prevent browser back/forward gesture on horizontal scroll
+            if (Math.abs(e.deltaX) > 0) {
+                e.preventDefault();
+            }
+            
             if (isAnimating && !isDragging) return;
             
             // Start dragging
@@ -1162,8 +1168,9 @@
                 setDragging(true);
             }
             
-            // Accumulate scroll
-            dragOffset += e.deltaY * dragMultiplier;
+            // Accumulate scroll (horizontal or vertical - use whichever is stronger)
+            const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+            dragOffset += delta * dragMultiplier;
             
             // Clamp drag offset to reasonable bounds
             const maxDrag = window.innerWidth * 1.1;
@@ -1201,7 +1208,7 @@
                 }
             }
             
-        }, { passive: true });
+        }, { passive: false });
 
         // --- KEYBOARD NAV ---
         window.addEventListener('keydown', (e) => {
